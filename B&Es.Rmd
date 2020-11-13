@@ -1,0 +1,302 @@
+---
+title: "Statistical Analysis of Breaking and Enterings in Toronto"
+author: "Yusra Fayyaz, Tanya Thaker, Keya Patel and Andre Graham Tutorial 0106, Group #4"
+subtitle: "The Importance of Location and Time"
+date: March 30, 2020
+output: 
+  beamer_presentation:
+    theme: "Rochester"
+    colortheme: "dolphin"
+    fonttheme: "structurebold"
+    slide_level: 2
+---
+
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# echo=FALSE will stop the code chunk from appearing in the knit document
+# warning=FALSE and message=FALSE will stop R messages from appearing in the knit document
+library(tidyverse)
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+# Load the TPS break in data
+break_ins <- read_csv("break_and_enters.csv")
+```
+
+
+
+## Introduction
+
+We carried out an analysis on the open source data set provided to us from the Toronto Police Service. This data set contains information on break-in and enters for the population of Toronto. We analysed this data set to shed some light on the spatial and temporal significance in regards to break-in and enters. In this process, we looked at specific situations that would be useful for the TPS when handling B&E's. This dataset is a subset of the Major Crime Indicators (MCI) and the data has been collected throughout 2014 to 2019. 
+
+## Objectives 
+The questions we are looking to find answers to are:
+
+1. Is the proportion of break-in and enters in commercial buildings 0.3?
+2. Is the number of break-ins during the day the same as the number of break-ins during the night?
+3. What is the average time it takes to report a break-in in hours after the occurrence?
+
+## Why are these questions important?
+These questions will be useful in order to...
+
+1. Provide more information as to whether commercial buildings truly are less likely to experience B&Es compared to residential buildings, like apartments and houses. The results to this question would provide the TPS with a better understanding to determine which type of building requires additional precautionary and security measures. For example, the TPS could implement a required number of security systems (alarms, security cameras, etc.) for the buildings that we find are at a higher risk of B&E's.
+
+## Why are these questions important? (continued)
+
+2. Provide information in regards to what time of day break-ins are more likely to occur. This would allow the TPS to take neccessary action for when to be more cautious or when to have readily available services. For instance, they can implement additional security such as neighbourhood watch. 
+3. Use the average time it takes to report a break-in so that when a break-in is reported, there can be an estimated time of occurrence immediately before further research. Also, this can provide more information on the case and approximate times to look back at security camera footage or other factors.
+
+## Data Summary for Questions 1
+
+**\textcolor{blue}{How did we clean the data?}**
+
+From the original data, we selected the variables needed for the analysis, which were the type of building and month at which the break-in was reported. After calculating the test statistic, we filtered out the break-ins that occurred in houses and apartments, since for our analysis we were only looking at commercial buildings.
+
+**\textcolor{blue}{What variables did we create?}**
+
+We created a new variable called "premise" which grouped the houses and apartments from the variable "premisetype" into the residential group, so that we could carry on with calculating our test statistic and hypothesis test more efficiently.
+
+## Data Summary for Questions 2
+
+**\textcolor{blue}{How did we clean the data?}**
+
+In order to filter and clean the data according to our needs, we selected the month at which the break-in was reported, as well as the break-in time variable. Then, we found the total number of breakins for day and night for each month and saved it into a new data file.
+
+**\textcolor{blue}{What variables did we create?}**
+
+We only added two new variables to the dataset. The first additional variable was "day_or_night" that stored whether the break-in occured during the day or night. We considered night as a period that starts around 6 pm and lasts until about 6 am and the remaining time as day. The other variable we created was "total" that contains the total number of breakins per month depending on the time of day.
+
+## Data Summary for Questions 3: 
+
+**\textcolor{blue}{How did we clean the data?}**
+
+To clean the data, first we selected the variables which were of importance to this question, the hour of occurrence and and the hour at which the break-in was reported. Then, we filtered the data so that it would only include observations that were reported on the same day that they occurred. This was to avoid outliers from people who were, for instance, on vacation or absent for a long period of time. 
+
+**\textcolor{blue}{What variables did we create?}**
+
+We created one additional variable that was important to answer this question, called "time_since_occurrence". This variable is essentially the difference between the reported hour and the occurrence hour in our filtered data in order to see how long each observation took to be reported after it occurred (in hours).
+
+
+## Statistical Methods for Question 1
+
+For question 1, the statistical method we used was a single proportion hypothesis test. This is because we are analyzing whether or not the proportion of B&Es that occur in commercial buildings is about 0.3.
+
+### Variables Used
+
+- *premisetype*: the type of building in which the B&E occurred
+- *reportedmonth*: the month of year at which the B&E was reported
+- *premise*: our new variable that groups houses and apartments as residential buildings, and commercial stays commercial.
+
+## Statistical Methods for Question 2
+For question 2, the statistical method we used was randomised hypothesis testing since we had two groups of data, i.e. day and night. We used this in order to find evidence to support or reject our null hypothesis that there is no difference in number of breakins during the day and the night.
+
+### Variables Used
+
+- *reportedmonth*: the month of year at which the B&E was reported
+- *breakin_time*: the time when the B&E occured on a 24-hour clock
+- *day_or_night*: whether the B&E occured during the Day or Night
+
+## Statistical Methods for Question 3
+For question 3, the statistical method we used was bootstrap sampling. We used this in order to get a confidence interval that would provide us with a range for the average time it takes for a break and enter to be reported after occurrence.
+
+### Variables Used
+
+- *occurrencedayofyear* : day of the year it occured - in order to filter data
+- *reporteddayofyear*: day of year it was reported - set equal to above to filter
+- *occurrencehour*: the hour of the day the B&E occurred
+- *reportedhour*: the hour of the day the B&E was reported
+- *time_since_occurrence*: reportedhour - occurrencehour
+- *mean_diff*: the average time it takes to report after occurrence
+
+## Results for Question 1: Our Hypotheses
+Our hypotheses were as follows:
+
+- \textcolor{purple}{$H_0$: P = 0.3}
+- \textcolor{purple}{$H_A$: P != 0.3} 
+
+where P is the proportion of break-ins in commercial buildings
+    
+## Results for Question 1: Test Statistic and Sample Simulation
+**Test Statistic Being Used**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+q1_dataset <- break_ins %>% select(reportedmonth, premisetype) %>% mutate(Commercial = (premisetype == "Commercial")) 
+my_dataset <- q1_dataset
+my_dataset <- my_dataset %>% filter(premisetype == "Commercial" | premisetype == "Apartment" | premisetype == "House")
+my_dataset <- my_dataset %>% mutate(premise = ifelse(Commercial == TRUE, yes="Commercial",no="Residential"))
+my_dataset <- my_dataset %>% select(premise, reportedmonth)
+
+#Test stat is the proportion commercial breaking and eneterings 
+group_res <- my_dataset %>% filter(premise == "Commercial")
+total <- as.numeric(my_dataset %>% summarise(n = n()))
+total_commercial <- as.numeric(group_res %>% summarise(n = n()))
+
+
+test_stat <- total_commercial / total
+test_stat
+```
+**Histogram of Simulated Values**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+my_dataset <- my_dataset %>% filter(premise == "Commercial")%>% select(premise, reportedmonth)
+#We simulate the proportion of breakins
+set.seed(451)
+n_observations <- 50
+repetitions <- 1000
+simulated_stats <- rep(NA, repetitions)
+for (i in 1:repetitions){
+  new_sim <- sample(c("Commercial", "Residential"), size = n_observations, prob = c(0.3, 0.7), replace = TRUE)
+  sim_p <- sum(new_sim == "Commercial")/n_observations
+  simulated_stats[i] = sim_p
+}
+
+
+sim <- tibble(p_commercial = simulated_stats)
+sim %>% ggplot(aes(x = p_commercial)) + geom_histogram(binwidth = 0.02, colour = "black", fill = "salmon") + xlab("Proportion of breaking and enterings for commercial buildings (for a sample size of 50)")
+```
+
+##  Results for Question 1: Our p-value
+**Based on this p-value, we are not able to reject the null hypothesis because the value is greater than 0.05 which is the significance level.** 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+difference <- abs(test_stat - 0.5)
+sim %>% filter(p_commercial >= 0.5 + difference | p_commercial <= 0.5 - difference) %>% summarise(pvalue = n() / repetitions)
+```
+
+## Results for Question 2: Our Hypotheses
+Our hypotheses were as follows:
+
+- \textcolor{purple}{$H_0$: D = N}
+
+- \textcolor{purple}{$H_A$: D != N}
+
+where D is the number of break-ins during the day and N is the number of break-ins during the night. 
+
+## Results for Question 2: Test Statistic
+**Test Statistic Being Used**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+q2_dataset <- break_ins %>%
+mutate(breakin_time = ifelse (occurrencehour < 6 | occurrencehour > 18,
+                              yes = "Night", no="Day")) %>% select(reportedmonth, breakin_time)
+
+month = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December")
+total = c(NA, 24)
+
+for (i in 1:12){
+  new <- q2_dataset %>% filter(reportedmonth == month[i] & breakin_time == "Day")
+  total[i] <- as.numeric(summarise(new, n = n()))
+  new2 <- q2_dataset %>% filter(reportedmonth == month[i] & breakin_time == "Night")
+  total[12 + i] <- as.numeric(summarise(new2, n = n()))
+}
+
+my_dataset <- tibble(day_or_night = c(rep("Day", 12), rep("Night", 12)), number = total)
+test_stat <- my_dataset %>% group_by(day_or_night) %>%
+  summarise(total = sum(number)) %>% summarise(test_stat = abs(diff(total))) %>% as.numeric()
+test_stat
+
+```
+
+**Histogram of Simulated Values: Differences Between Number of Break Ins for Day vs Night**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+set.seed(451)
+repetitions <- 1000
+simulated_differences <- rep(NA, repetitions)
+
+for(i in 1:repetitions){
+  values <- my_dataset %>%
+    mutate(day_or_night=sample(day_or_night)) %>%
+    group_by(day_or_night) %>%
+    summarise(total = sum(number)) %>% 
+    summarise(test_stat = abs(diff(total))) %>%
+    as.numeric()
+  
+  simulated_differences[i] <- as.numeric(values)
+}
+
+sim <- tibble(differences = simulated_differences)
+ggplot(sim, aes(x=differences)) +
+  geom_histogram(bins = 15, colour="black", fill="powderblue") + xlab("Difference in Number of Break-ins Using Simulated Values")
+```
+
+## Results to Question 2: Finding the P-Value and B&Es during the Day and Night
+**Our P-Value: We can reject the null hypothesis because the p-value is less than our significance level of 0.05**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+sim %>% filter(differences >= test_stat | differences <= -test_stat) %>% summarise(pvalue = n() / repetitions)
+```
+
+**Comparison of Number of B&Es During the Day vs Night**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+q2_dataset %>% ggplot() + aes(x = breakin_time) + geom_bar(colour="black", fill="mediumpurple1") + xlab("Break-Ins For Day vs Night")
+```
+
+
+## Results for Question 3: Summary Values for Initial Data
+**Summary Values (Mean, Median and Max)**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+data_3 <- break_ins %>%
+  filter(occurrencedayofyear == reporteddayofyear) %>%
+  select(occurrencehour, reportedhour) %>%
+  mutate(time_since_occurrence = (reportedhour - occurrencehour))
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+#Summary values for this data:
+data_3 %>%
+  summarise(
+    mean_diff = mean(time_since_occurrence),
+    median_diff = median(time_since_occurrence),
+    max_diff = max(time_since_occurrence))
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+#Saving population mean for use later:
+population_mean <- data_3 %>% summarise (population_mean_diff = mean(time_since_occurrence))
+population_mean <- as.numeric(population_mean)
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+set.seed(451)
+boot_means <- rep(NA, 5000)
+for (i in 1:5000){
+  boot_samp <- data_3 %>% sample_n(size=500, replace=TRUE)
+  boot_means[i] <- 
+    as.numeric(boot_samp %>%
+                 summarise(mean_diff = mean(time_since_occurrence)))
+}
+boot_means <- tibble(mean_diff = boot_means)
+```
+*Therefore, the average time it takes to report a B&E is about 3 hours and 40 minutes (3.68), the median time is 2 hours and the maximum time from our data is 23 hours.*
+
+## Results for Question 3: Histogram of Means Calculated from Bootstrap Samples
+**Distribution of the Means calculated for Bootstrap Sampling**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+ggplot(data=boot_means) + aes(x=mean_diff) + geom_histogram(colour = "black", fill = "lightpink3") + xlab("Mean calculated from the Bootstrap Sample")
+```
+
+
+## Results for Question 3: Quantiles for Confidence Interval
+**The Values for the 2.5th and 97.5th Percentiles**
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=3}
+quantile(boot_means$mean_diff, c(0.025,0.975))
+```
+
+*Therefore, the interval that is the middle 95% of our bootstrap distribution is (3.3, 4.07).*
+
+## Conclusion
+The answers to our questions according to our results are as follows:
+
+1. We had set a signficance level of 5%, and the \textcolor{purple}{p-value that resulted from the calculations is approximately 0.69}. This lets us conclude that we do not have enough evidence to reject the null hypothesis. Thus, we can say that commercial buildings are indeed less likely to experience B&Es compared to residential buildings. In other words, the proportion of B&E's in commercial buildings is in fact about 0.3, and the proportion of B&E's in residential buildings is approximately 0.7.
+
+## Conclusion (continued)
+
+2. Given that we had set our significance level at 5%, and our \textcolor{purple}{resulting p-value was 0.001}, we can say we have strong evidence to \textcolor{purple}{reject the null hypothesis}. Thus we can conclude the number of breakins during the day and night are not the same. Furthermore, we conclude that, based on our dataset, \textcolor{purple}{the number of break-ins during the day is more than the number of break-ins at night}. 
+
+3. The overall results for this analysis were that our 95% confidence interval is about 3.3 - 4.07, which includes our population mean for the dataset (3.67). This suggests that we can be 95% confident that the \textcolor{purple}{average time it takes between occurence of a break-in and reporting a break-in is between (about) 3 hours and 18 minutes, and 4 hours and 4 minutes}. 
+
+## Possible Limitations
+
+**\textcolor{blue}{What are possible limitations of our analyses?}**
+
+A possible limitation to our analyses is under recording and under reporting. It is possible that our dataset is too small compared to the population of Toronto which is about 2.93 million people, so this could lead to inaccuracy. Furthermore, not all neighbourhoods in Toronto where included in this dataset, which may result in a misrepresentation of the entirety of B&E's in Toronto.
+
+
